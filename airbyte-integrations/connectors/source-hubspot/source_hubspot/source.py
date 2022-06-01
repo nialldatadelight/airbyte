@@ -45,25 +45,17 @@ from source_hubspot.streams import (
     Workflows,
 )
 
-SCOPES = [
-    "automation",
+REQUIRED_SCOPES = [
     "content",
     "crm.lists.read",
     "crm.objects.companies.read",
     "crm.objects.contacts.read",
     "crm.objects.deals.read",
-    "crm.objects.feedback_submissions.read",
     "crm.objects.owners.read",
     "crm.schemas.companies.read",
     "crm.schemas.contacts.read",
     "crm.schemas.deals.read",
-    "e-commerce",
-    "files",
-    "files.ui_hidden.read",
-    "forms",
-    "forms-uploaded-files",
     "sales-email-read",
-    "tickets",
 ]
 
 
@@ -94,7 +86,7 @@ class SourceHubspot(AbstractSource):
     @staticmethod
     def check_scopes(response_json):
         granted_scopes = response_json["scopes"]
-        missed_scopes = set(SCOPES) - set(granted_scopes)
+        missed_scopes = set(REQUIRED_SCOPES) - set(granted_scopes)
         if missed_scopes:
             return False, "missed required scopes: " + ", ".join(sorted(missed_scopes))
         return True, None
