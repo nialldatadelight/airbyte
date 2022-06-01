@@ -248,8 +248,9 @@ class EmailActivity(
     SendgridStreamIncrementalMixin,
 ):
     data_field = "messages"
-    primary_key = "to_email"
+    primary_key = "msg_id"
     cursor_field = "last_event_time"
+    limit = 1000
 
     def path(self, **kwargs) -> str:
         return "messages"
