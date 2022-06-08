@@ -3,6 +3,7 @@
 #
 
 from abc import ABC, abstractmethod
+from datetime import datetime
 from typing import Any, Iterable, Mapping, MutableMapping, Optional
 
 import pendulum
@@ -65,6 +66,33 @@ class SendgridStreamOffsetPagination(SendgridStream):
             return
         self.offset += self.limit
         return {"offset": self.offset}
+
+
+class SendgridStreamLastEventTimePagination(SendgridStream):
+    def __init__(self, start_time: int, **kwargs):
+        super().__init__(**kwargs)
+        self._start_time = start_time
+
+    def request_params(self, next_page_token: Mapping[str, Any] = None, **kwargs) -> MutableMapping[str, Any]:
+        params = super().request_params(next_page_token=next_page_token, **kwargs)
+        params["limit"] = self.limit
+
+        start_time = datetime.utcfromtimestamp(self._start_time).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+        end_time = pendulum.now("UTC").strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+        if next_page_token:
+            end_time = next_page_token
+
+        query = f'last_event_time BETWEEN TIMESTAMP "{start_time}" AND TIMESTAMP "{end_time}"'
+        params.update({"query": query})
+        return params
+
+    def next_page_token(self, response: requests.Response) -> Optional[Mapping[str, Any]]:
+        stream_data = response.json()
+        if self.data_field:
+            stream_data = stream_data[self.data_field]
+        if len(stream_data) < self.limit:
+            return
+        return stream_data[-1]['last_event_time']
 
 
 class SendgridStreamIncrementalMixin(HttpStream, ABC):
@@ -243,13 +271,9 @@ class SpamReports(SendgridStreamOffsetPagination, SendgridStreamIncrementalMixin
         return "suppression/spam_reports"
 
 
-class EmailActivity(
-    SendgridStreamOffsetPagination,
-    SendgridStreamIncrementalMixin,
-):
+class EmailActivity(SendgridStreamLastEventTimePagination):
     data_field = "messages"
     primary_key = "msg_id"
-    cursor_field = "last_event_time"
     limit = 1000
 
     def path(self, **kwargs) -> str:
