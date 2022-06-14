@@ -1,0 +1,16 @@
+documentationUrl: https://docsurl.com
+connectionSpecification:
+  $schema: http://json-schema.org/draft-07/schema#
+  title: Apolloio Spec
+  type: object
+  required:
+    - api_key
+    - start_time
+  additionalProperties: false
+  properties:
+    api_key:
+      type: string
+      description: Apollo.io API Key
+    start_time:
+      type: string
+      description: Datetime in ISO format (e.g. 2022-01-01T00:00:00Z). Any data before this timestamp will not be replicated.
