@@ -62,7 +62,7 @@ class ApolloIncrementalMixin(IncrementalMixin):
         super().__init__(**kwargs)
         self.start_time = datetime.strptime(start_time, '%Y-%m-%dT%H:%M:%S%z')
         self._cursor_value = None
-        self._original_cursor_value = None
+        self._max_cursor_value = None
 
     @property
     def state(self):
@@ -70,8 +70,6 @@ class ApolloIncrementalMixin(IncrementalMixin):
     
     @state.setter
     def state(self, value):
-        if self._cursor_value is None:
-            self._original_cursor_value = datetime.strptime(value[self.cursor_field], self.date_format)
         self._cursor_value = datetime.strptime(value[self.cursor_field], self.date_format)
 
     def read_records(self, *args, **kwargs):
@@ -80,7 +78,7 @@ class ApolloIncrementalMixin(IncrementalMixin):
         # Sorted descending, so can do next(records)
         first_record = next(records)
         latest_record_date = datetime.strptime(first_record[self.cursor_field], self.date_format)
-        self._max_cursor_value = max(self._max_cursor_value or self.start_time, latest_record_date)  # TODO: Only set when finished
+        self._max_cursor_value = max(self._max_cursor_value or self._cursor_value or self.start_time, latest_record_date)  # TODO: Only set when finished
 
         yield first_record
         for record in records:
@@ -91,12 +89,13 @@ class ApolloIncrementalMixin(IncrementalMixin):
 
         # As ordered descending
         records = stream_data.get(self.data_field, [])
-        last_record = records[-1]
-        oldest_record_date = datetime.strptime(last_record[self.cursor_field], self.date_format)
-        if oldest_record_date < self.start_time:
-            return
-        if self._original_cursor_value is not None and oldest_record_date < self._original_cursor_value:  # Check against last state run
-            return
+        if records:
+            last_record = records[-1]
+            oldest_record_date = datetime.strptime(last_record[self.cursor_field], self.date_format)
+            if oldest_record_date < self.start_time:
+                return
+            if self._cursor_value is not None and oldest_record_date < self._cursor_value:  # Check against last state run
+                return
 
         npt = super().next_page_token(response)
         if npt is None:
@@ -126,7 +125,7 @@ class EmailerMessages(ApolloIncrementalMixin, ApolloStreamPaginationMixin, Apoll
         return "emailer_messages/search"
 
 
-class EmailerCampaigns(ApolloStream, ApolloIncrementalMixin, ApolloStreamPaginationMixin):
+class EmailerCampaigns(ApolloIncrementalMixin, ApolloStreamPaginationMixin, ApolloStream):
     primary_key = "id"
     data_field = "emailer_campaigns"
     cursor_field = "created_at"
