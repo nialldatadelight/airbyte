@@ -24,5 +24,5 @@ class SourceApolloio(AbstractSource):
     def streams(self, config: Mapping[str, Any]) -> List[Stream]:
         return [
             EmailerMessages(api_key=config['api_key'], start_time=config['start_time']),
-            EmailerCampaigns(api_key=config['api_key'], start_time=config['start_time']),
+            # EmailerCampaigns(api_key=config['api_key'], start_time=config['start_time']),
         ]

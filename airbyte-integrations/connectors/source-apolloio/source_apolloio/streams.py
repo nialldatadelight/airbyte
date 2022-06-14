@@ -62,13 +62,16 @@ class ApolloIncrementalMixin(IncrementalMixin):
         super().__init__(**kwargs)
         self.start_time = datetime.strptime(start_time, '%Y-%m-%dT%H:%M:%S%z')
         self._cursor_value = None
+        self._original_cursor_value = None
 
     @property
     def state(self):
-        return {self.cursor_field: self._cursor_value or self.start_time}
+        return {self.cursor_field: (self._cursor_value or self.start_time).strftime(self.date_format)}
     
     @state.setter
     def state(self, value):
+        if self._cursor_value is None:
+            self._original_cursor_value = datetime.strptime(value[self.cursor_field], self.date_format)
         self._cursor_value = datetime.strptime(value[self.cursor_field], self.date_format)
 
     def read_records(self, *args, **kwargs):
@@ -77,30 +80,36 @@ class ApolloIncrementalMixin(IncrementalMixin):
         # Sorted descending, so can do next(records)
         first_record = next(records)
         latest_record_date = datetime.strptime(first_record[self.cursor_field], self.date_format)
-        self._cursor_value = max(self._cursor_value or self.start_time, latest_record_date)
-
-        # for k, v in first_record.items():
-        #     _t = type(v)
-        #     tmap = {
-        #         str: 'string',
-        #         int: 'number',
-        #         float: 'number',
-        #         list: 'array',
-        #         bool: 'boolean',
-        #         dict: 'object',
-        #         type(None): 'null'
-        #     }
-        #     _t = tmap[_t]
-        #     print('"%s": {"type": ["null", "%s"]}' % (k, _t))
+        self._max_cursor_value = max(self._max_cursor_value or self.start_time, latest_record_date)  # TODO: Only set when finished
 
         yield first_record
         for record in records:
             yield record
 
-    # TODO: Don't continue to paginate if record is before start_time
+    def next_page_token(self, response):
+        stream_data = response.json()
+
+        # As ordered descending
+        records = stream_data.get(self.data_field, [])
+        last_record = records[-1]
+        oldest_record_date = datetime.strptime(last_record[self.cursor_field], self.date_format)
+        if oldest_record_date < self.start_time:
+            return
+        if self._original_cursor_value is not None and oldest_record_date < self._original_cursor_value:  # Check against last state run
+            return
+
+        npt = super().next_page_token(response)
+        if npt is None:
+            # Finished paginating, so set self._cursor_value.
+            # Do this here, at the end of paginating, to ensure that if there's an error while paginating that the
+            # state stored is the original state so we refetch from here
+            self._cursor_value = self._max_cursor_value
+            return
+
+        return npt
 
 
-class EmailerMessages(ApolloStreamPaginationMixin, ApolloIncrementalMixin, ApolloStream):
+class EmailerMessages(ApolloIncrementalMixin, ApolloStreamPaginationMixin, ApolloStream):
     primary_key = "id"
     data_field = "emailer_messages"
     default_body = {
@@ -117,7 +126,7 @@ class EmailerMessages(ApolloStreamPaginationMixin, ApolloIncrementalMixin, Apoll
         return "emailer_messages/search"
 
 
-class EmailerCampaigns(ApolloStreamPaginationMixin, ApolloIncrementalMixin, ApolloStream):
+class EmailerCampaigns(ApolloStream, ApolloIncrementalMixin, ApolloStreamPaginationMixin):
     primary_key = "id"
     data_field = "emailer_campaigns"
     cursor_field = "created_at"
