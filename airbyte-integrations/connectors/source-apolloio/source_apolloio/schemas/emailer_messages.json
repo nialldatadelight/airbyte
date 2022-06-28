@@ -6,33 +6,49 @@
         "user_id": { "type": ["string"] },
         "status": { "type": ["string"] },
         "time_zone": { "type": ["null", "string"] },
-        "provider_message_id": { "type": ["null", "null"] },
+        "provider_message_id": { "type": ["null", "string"] },
         "to_name": { "type": ["null", "string"] },
-        "due_at": { "type": ["null", "string"] },
-        "completed_at": { "type": ["null", "string"] },
+        "due_at": {
+            "type": ["null", "string"],
+            "format": "date-time",
+            "airbyte_type": "timestamp_with_timezone"
+        },
+        "completed_at": {
+            "type": ["null", "string"],
+            "format": "date-time",
+            "airbyte_type": "timestamp_with_timezone"
+        },
         "emailer_touch_id": { "type": ["null", "string"] },
         "emailer_campaign_id": { "type": ["null", "string"] },
-        "provider_thread_id": { "type": ["null", "null"] },
-        "failed_at": { "type": ["null", "null"] },
-        "failure_reason": { "type": ["null", "null"] },
+        "provider_thread_id": { "type": ["null", "string"] },
+        "failed_at": {
+            "type": ["null", "string"],
+            "format": "date-time",
+            "airbyte_type": "timestamp_with_timezone"
+        },
+        "failure_reason": { "type": ["null", "string"] },
         "attachment_ids": { "type": ["null", "array"] },
         "enable_tracking": { "type": ["null", "boolean"] },
         "type": { "type": ["null", "string"] },
         "contact_id": { "type": ["null", "string"] },
         "schedule_delayed_reason": { "type": ["null", "string"] },
-        "demoed": { "type": ["null", "null"] },
+        "demoed": { "type": ["null", "boolean"] },
         "email_account_id": { "type": ["null", "string"] },
-        "due_at_manually_changed": { "type": ["null", "null"] },
-        "not_sent_reason": { "type": ["null", "null"] },
-        "bounce": { "type": ["null", "null"] },
-        "spam_blocked": { "type": ["null", "null"] },
-        "tracking_disabled_reason": { "type": ["null", "null"] },
-        "created_at": { "type": ["null", "string"] },
+        "due_at_manually_changed": { "type": ["null", "boolean"] },
+        "not_sent_reason": { "type": ["null", "string"] },
+        "bounce": { "type": ["null", "boolean"] },
+        "spam_blocked": { "type": ["null", "boolean"] },
+        "tracking_disabled_reason": { "type": ["null", "string"] },
+        "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "airbyte_type": "timestamp_with_timezone"
+        },
         "async_sending": { "type": ["null", "boolean"] },
         "due_at_source": { "type": ["null", "string"] },
         "crm_id": { "type": ["null", "string"] },
-        "replied": { "type": ["null", "null"] },
-        "needs_dynamic_assemble": { "type": ["null", "null"] },
+        "replied": { "type": ["null", "boolean"] },
+        "needs_dynamic_assemble": { "type": ["null", "boolean"] },
         "recipients": { "type": ["null", "array"] },
         "send_from": { "type": ["null", "object"] },
         "from_email": { "type": ["null", "string"] },
@@ -50,8 +66,16 @@
         "emailer_message_events": { "type": ["null", "array"] },
         "num_opens": { "type": ["null", "number"] },
         "num_clicks": { "type": ["null", "number"] },
-        "last_clicked_at": { "type": ["null", "string"] },
-        "last_opened_at": { "type": ["null", "string"] },
+        "last_clicked_at": {
+            "type": ["null", "string"],
+            "format": "date-time",
+            "airbyte_type": "timestamp_with_timezone"
+        },
+        "last_opened_at": {
+            "type": ["null", "string"],
+            "format": "date-time",
+            "airbyte_type": "timestamp_with_timezone"
+        },
         "campaign_name": { "type": ["null", "string"] },
         "campaign_position": { "type": ["null", "number"] }
     }

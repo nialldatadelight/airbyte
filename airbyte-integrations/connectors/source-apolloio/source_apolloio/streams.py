@@ -1,6 +1,7 @@
 from datetime import datetime
 from airbyte_cdk.sources.streams.http import HttpStream
 from airbyte_cdk.sources.streams import IncrementalMixin
+from airbyte_cdk.sources.utils.transform import TransformConfig, TypeTransformer
 
 
 class ApolloStream(HttpStream):
@@ -137,6 +138,20 @@ class EmailerCampaigns(ApolloIncrementalMixin, ApolloStreamPaginationMixin, Apol
         "Cache-Control": "no-cache",
     }
     http_method = "POST"
+    transformer = TypeTransformer([TransformConfig.DefaultSchemaNormalization, TransformConfig.CustomSchemaNormalization])
 
     def path(self, **kwargs) -> str:
         return "emailer_campaigns/search"
+
+    @transformer.registerCustomTransform
+    def replace_str_numbers(orginal_value, field_schema):
+        transformed_value = orginal_value
+
+        if not isinstance(transformed_value, str):
+            return transformed_value
+        
+        types = field_schema['type']
+        if transformed_value in ('loading') and 'number' in types and 'null' in types:
+            transformed_value = None
+        
+        return transformed_value
